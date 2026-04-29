@@ -4,55 +4,81 @@ import sns.Condition.{Exactly, GreaterThan, LessThan}
 import ujson.*
 import upickle.core.LinkedHashMap
 
+class Namecreator {
+  private var count = 0
+
+  def getname(): String = {
+    count += 1
+    toBase26(count)
+  }
+
+  private def toBase26(n: Int): String = {
+    var num = n
+    var result = ""
+
+    while (num > 0) {
+      val rem = (num - 1) % 26
+      result = ('a' + rem).toChar + result
+      num = (num - 1) / 26
+    }
+
+    result
+  }
+}
+
 def handler(query: sns.Query): Option[Int] = {
   val driver = GraphDatabase.driver("neo4j://localhost:7687", AuthTokens.basic("neo4j", "beydb-beepr"))
   val session = driver.session()
+  val namecreator = new Namecreator
+  val var_name = namecreator.getname()
   query match
     case Users(c) => {
-      user_clause_handler(c) match {
-        case Some(q) => Some(session.run(s"$q" + "RETURN COUNT(u) AS cnt").single().get("cnt").asInt())
+      user_clause_handler(c, var_name, namecreator) match {
+        case Some(q) => Some(session.run(s"$q" + s"RETURN COUNT($var_name) AS cnt").single().get("cnt").asInt())
         case None => None
       }
     }
     case Posts(c) => {
-      post_clause_handler(c) match {
-        case Some(q) => Some(session.run(s"$q" + "RETURN COUNT(p) AS cnt").single().get("cnt").asInt())
+      post_clause_handler(c, var_name, namecreator) match {
+        case Some(q) => Some(session.run(s"$q" + s"RETURN COUNT($var_name) AS cnt").single().get("cnt").asInt())
         case None => None
       }
     }
 }
 
-def user_clause_handler(clause: Clause): Option[String] = {
+def user_clause_handler(clause: Clause, var_name: String, namecreator: Namecreator): Option[String] = {
+  val var_name2 = namecreator.getname()
   clause match {
-    case Clause.True => Some("MATCH (u:user)")
-    case Clause.HasFirstName(name) => Some(s"MATCH (u:user {first:$name})")
-    case Clause.HasLastName(name) => Some(s"MATCH (u:user {last:$name})")
-    case Clause.HasPost(p) => post_clause_handler(p) match {
+    case Clause.True => Some(s"MATCH ($var_name:user)")
+    case Clause.HasFirstName(name) => Some(s"MATCH ($var_name:user {first:\"$name\"})")
+    case Clause.HasLastName(name) => Some(s"MATCH ($var_name:user {last:\"$name\"})")
+    case Clause.HasPost(p) => post_clause_handler(p, var_name2, namecreator) match {
       case Some(q) => Some(s"""$q
-                               MATCH (u:user) -[:Posted]->(p)""")
+                               MATCH ($var_name:user) -[:Posted]->(p)""")
       case None => None
     }
     case _ => None
   }
 }
 
-def post_clause_handler(clause: Clause): Option[String] = {
+def post_clause_handler(clause: Clause, var_name: String, namecreator: Namecreator): Option[String] = {
+  val var_name2 = namecreator.getname()
   clause match {
-    case Clause.True => Some("MATCH (p:post)")
-    case Clause.HasAuthor(subclause) => user_clause_handler(subclause) match {
+    case Clause.True => Some(s"MATCH ($var_name:post)")
+    case Clause.HasAuthor(subclause) => user_clause_handler(subclause, var_name2, namecreator) match {
       case Some(q) => Some(s"$q" +
-        s"MATCH (u) -[:Posted]->(p:post)")
+        s"MATCH ($var_name) -[:Posted]->(p:post)")
       case None => None
     }
 
-    case Clause.HasComment(subclause) => post_clause_handler(subclause) match {
-      case Some(q) => Some(s"${q.replace("p:post", "p1:post")}" +
-        s"MATCH (p:post) -[:Has]->(${q.replace("p:post", "p1:post")})")
+    case Clause.HasComment(subclause) => post_clause_handler(subclause, var_name2, namecreator) match {
+      case Some(q) => Some(s"$q" +
+        s"MATCH ($var_name:post) -[:Has]->($var_name2:post)")
       case None => None
     }
     case Clause.LikeCount(likes) => condition_handler(likes) match {
-      case Some(q) => Some(s"MATCH (p:post) <-[l:liked]-() " +
-                            s"WITH p, COUNT(l) AS likeCount" +
+      case Some(q) => Some(s"MATCH ($var_name:post) <-[l:liked]-() " +
+                            s"WITH $var_name, COUNT(l) AS likeCount " +
                             s"WHERE $q")
       case None => None
     }
@@ -62,9 +88,9 @@ def post_clause_handler(clause: Clause): Option[String] = {
 
 def condition_handler(condition: Condition): Option[String] = {
   condition match {
-    case Exactly(n) => Some(s"likeCount == $n")
-    case LessThan(n) => Some(s"likeCount < $n")
-    case GreaterThan(n) => Some(s"likeCount > $n")
+    case Exactly(n) => Some(s"likeCount = $n ")
+    case LessThan(n) => Some(s"likeCount < $n ")
+    case GreaterThan(n) => Some(s"likeCount > $n ")
   }
 }
 
@@ -140,16 +166,20 @@ def handleEvent(session: Session, json: String): Unit =
 
 
 @main def Main =
+  val driver = GraphDatabase.driver("neo4j://localhost:7687", AuthTokens.basic("neo4j", "beydb-beepr"))
+  System.out.println("Connection established.")
+  val session = driver.session()
   val s = Simulator(seed = 1337)
+  session.run("MATCH (n) DETACH DELETE n")
   for i <- 0 until 1000 do
     if (i & 0b11) != 0b11 then
       val e = s.randomEvent()
-      //println(e)
+      handleEvent(session, e)
+
     else
       val c = s.challenge(handler)
   println(s.score())
 
-  val driver = GraphDatabase.driver(
-    "neo4j://localhost:7687", AuthTokens.basic("neo4j", "beydb-beepr"))
+
   driver.verifyConnectivity()
   driver.close()
