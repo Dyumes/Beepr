@@ -1,6 +1,6 @@
 package sns
 
-import collection.mutable
+import scala.collection.mutable
 
 /** A user. */
 class User(var first: String, var last: String):

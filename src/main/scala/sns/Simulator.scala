@@ -2,8 +2,7 @@ package sns
 
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
-
-import collection.mutable
+import scala.collection.mutable
 import scala.util.Random
 
 class Simulator(seed: Long):

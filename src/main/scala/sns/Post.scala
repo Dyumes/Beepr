@@ -1,8 +1,7 @@
 package sns
 
 import java.time.LocalDate
-
-import collection.mutable
+import scala.collection.mutable
 
 /** A post left on the profile of a user. */
 class Post(val user: User.Identity, var text: String, val date: LocalDate):
