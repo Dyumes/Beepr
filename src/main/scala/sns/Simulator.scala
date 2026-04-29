@@ -6,9 +6,6 @@ import java.time.temporal.ChronoUnit
 import collection.mutable
 import scala.util.Random
 
-import sns.{Event, Post, User, Names}
-import sns.Simulator.Query
-
 class Simulator(seed: Long):
 
   /** The random generator of this simulator. */
@@ -25,6 +22,9 @@ class Simulator(seed: Long):
 
   /** A list with the positions in `posts` that have been freed. */
   private var nextFreedPost: List[Post.Identity] = Nil
+
+  /** The number of challenges succeeded and failed. */
+  private var challenges: Array[Int] = Array(0, 0)
 
   /** Adds a user with the given name and returns its identity. */
   def addUser(first: String, last: String): User.Identity =
@@ -63,18 +63,26 @@ class Simulator(seed: Long):
 
   /** Removes `user` and its posts. */
   def removeUser(user: User.Identity): Unit =
-    val ps = users(user).get.posts.clone()
-    for p <- ps do removePost(p, recursively = false)
+    removePosts(users(user).get.posts.toList)
     users(user) = None
     nextFreedUser = user :: nextFreedUser
 
   /** Removes `post` and its comments. */
-  def removePost(post: Post.Identity, recursively: Boolean): Unit =
-    users(posts(post).get.user).get.posts.remove(post)
-    if recursively then
-      for p <- posts(post).get.comments do removePost(p, recursively)
-    posts(post) = None
-    nextFreedPost = post :: nextFreedPost
+  def removePost(post: Post.Identity): Unit =
+    removePosts(List(post))
+
+  /** Removes all posts in `work`, along with their comments. */
+  def removePosts(work: List[Post.Identity]): Unit =
+    work match
+      case w :: ws => posts(w) match
+        case Some(p) =>
+          users(p.user).get.posts.remove(w)
+          posts(w) = None
+          nextFreedPost = w :: nextFreedPost
+          removePosts(ws.appendedAll(p.comments))
+        case None =>
+          removePosts(ws)
+      case Nil => ()
 
   /** Modifies the text of `post`. */
   def modifyPost(post: Post.Identity, text: String): Unit =
@@ -82,11 +90,17 @@ class Simulator(seed: Long):
 
   /** Generates a query and tests its answer. */
   def challenge(handler: Query => Option[Int]): Boolean =
-    false
+    val q = Query.make(this)
+    val i = handler(q) match
+      case Some(n) => if n == q.evaluate(this) then 0 else 1
+      case None => 1
+    challenges(i) += 1
+    i == 0
 
   /** Returns the score of the challenges that have been executed. */
   def score(): Double =
-    0.0
+    val total = challenges(0) + challenges(1)
+    if (total == 0) then 1.0 else challenges(0).toDouble / total.toDouble
 
   /** Returns the next event occurring on the platform. */
   def randomEvent(): String =
@@ -116,6 +130,14 @@ class Simulator(seed: Long):
   def randomDate(from: LocalDate = LocalDate.of(2020, 1, 1)): LocalDate =
     from.plus(random.nextInt(365), ChronoUnit.DAYS)
 
+  /** Returns a random ASCII character string. */
+  def randomText(): String =
+    val s = StringBuilder()
+    for i <- 0 until (10 + random.nextInt(30)) do
+      if (i != 0) && (i % (random.nextInt(5) + 2) == 0) then s.append(' ')
+      s.append((random.nextInt(26) + 'a').toChar)
+    s.toString()
+
   /** Returns a random element from `xs` iff `xs` is not empty. */
   private def randomElement[E](xs: collection.IndexedSeq[E]): Option[E] =
     if xs.isEmpty then None else Some(xs(random.nextInt(xs.length)))
@@ -129,10 +151,5 @@ class Simulator(seed: Long):
           val k = (i + 1) % xs.length
           if k != k then loop(k, j) else None
       loop((random.nextInt(xs.length) + 1) % xs.length, random.nextInt(xs.length))
-
-object Simulator:
-
-  /** A query against the contents of the simulator's data. */
-  type Query = String
 
 end Simulator

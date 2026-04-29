@@ -1,7 +1,5 @@
 package sns
 
-import sns.{Post, Simulator, User}
-
 /** A function that modifies `simulator` and returns a JSON description of this update iff it
  *  could be applied. Otherwise, returns `None` without modifying `simulator`.
  */
@@ -10,14 +8,23 @@ type EventFactory = (simulator: Simulator) => Option[String]
 object Event:
 
   /** A collection of event constructors. */
-  val factories = IArray[EventFactory](
-    newUser, newUser,
-    newPost, newPost, newPost,
-    newComment, newComment, newComment, newComment,
-    newLike, newLike, newLike, newLike, newLike, newLike,
-    removeUser,
-    removePost,
-    modifyPost)
+  val factories: IArray[EventFactory] =
+    def repeat(factory: EventFactory, times: Int): Iterator[EventFactory] =
+      new Iterator[EventFactory] {
+        var n = 0
+        def hasNext: Boolean = n < times
+        def next(): EventFactory = { n += 1 ; factory }
+      }
+
+    val builder = IArray.newBuilder[EventFactory]
+    builder.addAll(repeat(newUser, 2))
+    builder.addAll(repeat(newPost, 10))
+    builder.addAll(repeat(newComment, 10))
+    builder.addAll(repeat(newLike, 5))
+    builder.addOne(removeUser)
+    builder.addOne(removePost)
+    builder.addOne(modifyPost)
+    builder.result()
 
   /** The creation of a new user. */
   def newUser(simulator: Simulator): Option[String] =
@@ -29,7 +36,7 @@ object Event:
   /** The ceation of a new post. */
   def newPost(simulator: Simulator): Option[String] =
     simulator.randomUser().map { (u) =>
-      val a = simulator.random.nextString(10)
+      val a = simulator.randomText()
       val b = simulator.randomDate()
       val i = simulator.addPost(u, a, b)
       describe("new-post", IArray("id" -> i, "user" -> u, "text" -> a, "date" -> b))
@@ -39,7 +46,7 @@ object Event:
   def newComment(simulator: Simulator): Option[String] =
     simulator.randomPost().flatMap { (p) =>
       simulator.randomUser().map { (u) =>
-        val a = simulator.random.nextString(10)
+        val a = simulator.randomText()
         val b = simulator.randomDate(from = simulator.posts(p).get.date)
         val i = simulator.addComment(p, u, a, b)
         describe(
@@ -66,14 +73,14 @@ object Event:
   /** The deletion of a post. */
   def removePost(simulator: Simulator): Option[String] =
     simulator.randomPost().map { (p) =>
-      simulator.removePost(p, recursively = true)
+      simulator.removePost(p)
       describe("delete-post", IArray("id" -> p))
     }
 
   /** The modification of a post. */
   def modifyPost(simulator: Simulator): Option[String] =
     simulator.randomPost().map { (p) =>
-      val a = simulator.random.nextString(10)
+      val a = simulator.randomText()
       simulator.modifyPost(p, a)
       describe("update-post", IArray("id" -> p, "text" -> a))
     }

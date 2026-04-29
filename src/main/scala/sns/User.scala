@@ -2,8 +2,6 @@ package sns
 
 import collection.mutable
 
-import sns.Post
-
 /** A user. */
 class User(var first: String, var last: String):
 
