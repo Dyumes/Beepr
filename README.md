@@ -14,6 +14,14 @@ The simulator generates 7 event types: `new-user`, `new-post`, `new-comment`, `l
 - A post accumulates likes (counter only, no user tracking)
 - Deleting a user removes all their posts/comments; deleting a post removes it and all its comments recursively
 
+
+```mermaid
+flowchart LR
+  User-->|LIKES|Post;
+  User-->|POSTED|Post;
+  Post-->|HAS|Post;
+```
+
 ---
 
 ## Task 2 – Implementation
@@ -29,3 +37,5 @@ Two node labels, two relationship types:
 (:User)-[:POSTED]->(:Post)      // user authored a post or comment
 (:Post)-[:HAS_COMMENT]->(:Post) // post has a comment
 ```
+
+

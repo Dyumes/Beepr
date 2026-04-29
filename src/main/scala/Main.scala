@@ -1,12 +1,18 @@
-import sns.{Simulator, Query}
+import sns.{Query, Simulator, User}
 import org.neo4j.driver.{AuthTokens, Driver, GraphDatabase, QueryConfig, Session, Values}
 import ujson.*
 import upickle.core.LinkedHashMap
 
 
-
 def handler(query: sns.Query): Option[Int] =
+  //if query == "count:users" then Some(0) else None
   println(query)
+  /*query match {
+    case a => ""
+    case _ => "hihi"
+  }
+
+   */
   None
 
 def parseEvent(json: String): (String, LinkedHashMap[String, Value]) =
@@ -87,9 +93,9 @@ def handleEvent(session: Session, json: String): Unit =
   for i <- 0 until 1000 do
     if (i & 0b11) != 0b11 then
       val e = s.randomEvent()
-      println(e)
+      //println(e)
     else
-      val c = s.challenge(handler)
+      s.challenge(handler)
   println(s.score())
 
   val driver = GraphDatabase.driver(
