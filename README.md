@@ -17,9 +17,9 @@ The simulator generates 7 event types: `new-user`, `new-post`, `new-comment`, `l
 
 ```mermaid
 flowchart LR
-  User-->|LIKES|Post;
-  User-->|POSTED|Post;
-  Post-->|HAS|Post;
+    User-->|LIKES|Post;
+    User-->|POSTED|Post;
+    Post-->|HAS|Post;
 ```
 
 ---

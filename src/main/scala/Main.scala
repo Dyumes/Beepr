@@ -1,4 +1,5 @@
-import sns.{Query, Simulator, User}
+import sns.{Clause, Query, Simulator, User}
+import sns.{Users, Posts}
 import org.neo4j.driver.{AuthTokens, Driver, GraphDatabase, QueryConfig, Session, Values}
 import ujson.*
 import upickle.core.LinkedHashMap
@@ -8,13 +9,24 @@ import upickle.core.LinkedHashMap
 def handler(query: sns.Query): Option[Int] =
   //if query == "count:users" then Some(0) else None
   println(query)
-  /*query match {
-    case a => ""
-    case _ => "hihi"
+  query match {
+    case Users(c) => {
+      c match {
+        case Clause.True => None
+        case Clause.HasFirstName(name) => None
+        case Clause.HasLastName(name) => None
+        case Clause.HasPost(p) => None
+      }
+    }
+    case Posts(c) => {
+      c match {
+        case Clause.True => None
+        case Clause.HasAuthor(subClause) => handler(Posts(subClause))
+        case Clause.HasComment(comment) => None
+        case Clause.LikeCount(likes) => None
+      }
+    }
   }
-
-   */
-  None
 
 def parseEvent(json: String): (String, LinkedHashMap[String, Value]) =
   val sanitized = json.filter(c => !c.isControl)
@@ -69,6 +81,7 @@ def handleEvent(session: Session, json: String): Unit =
          """)
     case _ => println(s"Unknown event: $event")
 
+/*
 @main def Main =
   val driver = GraphDatabase.driver("neo4j://localhost:7687", AuthTokens.basic("neo4j", "beydb-beepr"))
   System.out.println("Connection established.")
@@ -87,19 +100,21 @@ def handleEvent(session: Session, json: String): Unit =
 
   session.close()
   driver.close()
+*/
 
+@main def Main =
+  val driver = GraphDatabase.driver("neo4j://localhost:7687", AuthTokens.basic("neo4j", "beydb-beepr"))
+  System.out.println("Connection established.")
+  val session = driver.session()
+  val s = Simulator(seed = 1337)
+  for i <- 0 until 1000 do
+    if (i & 0b11) != 0b11 then
+      val e = s.randomEvent()
+      //println(e)
+      handleEvent(session, e)
+    else
+      s.challenge(handler)
+  println(s.score())
 
-//@main def Main =
-//  val s = Simulator(seed = 1337)
-//  for i <- 0 until 1000 do
-//    if (i & 0b11) != 0b11 then
-//      val e = s.randomEvent()
-//      println(e)
-//    else
-//      val c = s.challenge(handler)
-//  println(s.score())
-//
-//  val driver = GraphDatabase.driver(
-//    "neo4j://localhost:7687", AuthTokens.basic("neo4j", "beydb-beepr"))
-//  driver.verifyConnectivity()
-//  driver.close()
+  driver.verifyConnectivity()
+  driver.close()
