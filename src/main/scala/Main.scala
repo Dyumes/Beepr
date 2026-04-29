@@ -31,19 +31,29 @@ def handler(query: sns.Query): Option[Int] = {
   val session = driver.session()
   val namecreator = new Namecreator
   val var_name = namecreator.getname()
-  query match
-    case Users(c) => {
-      user_clause_handler(c, var_name, namecreator) match {
-        case Some(q) => Some(session.run(s"$q" + s"RETURN COUNT($var_name) AS cnt").single().get("cnt").asInt())
-        case None => None
+  try {
+    query match
+      case Users(c) => {
+        user_clause_handler(c, var_name, namecreator) match {
+          case Some(q) => Some(session.run(s"$q" + s"RETURN COUNT(DISTINCT $var_name) AS cnt").single().get("cnt").asInt())
+          case None => None
+        }
       }
-    }
-    case Posts(c) => {
-      post_clause_handler(c, var_name, namecreator) match {
-        case Some(q) => Some(session.run(s"$q" + s"RETURN COUNT($var_name) AS cnt").single().get("cnt").asInt())
-        case None => None
+      case Posts(c) => {
+        post_clause_handler(c, var_name, namecreator) match {
+          case Some(q) => Some(session.run(s"$q" + s"RETURN COUNT(DISTINCT $var_name) AS cnt").single().get("cnt").asInt())
+          case None => None
+        }
       }
+  } catch {
+    case e: Exception => {
+      println("Error: " + e.getMessage)
+      None
     }
+  } finally {
+    session.close()
+    driver.close()
+  }
 }
 
 def user_clause_handler(clause: Clause, var_name: String, namecreator: Namecreator): Option[String] = {
@@ -77,7 +87,7 @@ def post_clause_handler(clause: Clause, var_name: String, namecreator: Namecreat
       case None => None
     }
     case Clause.LikeCount(likes) => condition_handler(likes) match {
-      case Some(q) => Some(s"MATCH ($var_name:post) <-[l:liked]-() " +
+      case Some(q) => Some(s"OPTIONAL MATCH ($var_name:post) <-[l:Like]-() " +
                             s"WITH $var_name, COUNT(l) AS likeCount " +
                             s"WHERE $q")
       case None => None
@@ -181,5 +191,6 @@ def handleEvent(session: Session, json: String): Unit =
   println(s.score())
 
 
+  session.close()
   driver.verifyConnectivity()
   driver.close()
