@@ -29,3 +29,23 @@ Two node labels, two relationship types:
 (:User)-[:POSTED]->(:Post)      // user authored a post or comment
 (:Post)-[:HAS_COMMENT]->(:Post) // post has a comment
 ```
+
+
+---
+
+## Task 3 – Deployment
+
+### Possible queries labels:
+- Posts()
+- Users()
+
+### Possible queries:
+- HasLastName(lastName)
+- HasFirstName(firstName)
+- HasComment()
+- HasAuthor()
+- HasPost()
+- LikeCount()
+- Exactly(n)
+- LessThan(n)
+- GreaterThan(n)
