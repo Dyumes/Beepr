@@ -1,0 +1,47 @@
+# .gitignore for Beepr project (Scala / SBT / Java / IntelliJ)
+
+# Build / dependency directories
+target/
+project/target/
+project/project/
+streams/
+update_cache_2.12/
+lib_managed/
+src_managed/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+out/
+
+# Eclipse
+.settings/
+*.classpath
+*.project
+
+# SBT / Scala
+.bsp/
+.cache/
+.ensime_cache/
+
+# Logs and temp files
+logs/
+*.log
+tmp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Vim / editors
+*.swp
+*~
+
+# Others
+node_modules/
+.vscode/
+
