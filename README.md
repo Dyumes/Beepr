@@ -39,3 +39,24 @@ Two node labels, two relationship types:
 ```
 
 
+<<<<<<< HEAD
+=======
+---
+
+## Task 3 – Deployment
+
+### Possible queries labels:
+- Posts()
+- Users()
+
+### Possible queries:
+- HasLastName(lastName)
+- HasFirstName(firstName)
+- HasComment()
+- HasAuthor()
+- HasPost()
+- LikeCount()
+- Exactly(n)
+- LessThan(n)
+- GreaterThan(n)
+>>>>>>> e29fd5c2ac2e855863cc9fb33983302ae8ffb4ad
