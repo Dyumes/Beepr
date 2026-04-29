@@ -3,8 +3,6 @@ import org.neo4j.driver.{AuthTokens, Driver, GraphDatabase, QueryConfig, Session
 import ujson.*
 import upickle.core.LinkedHashMap
 
-
-
 def handler(query: sns.Query): Option[Int] =
   None
 
@@ -32,7 +30,7 @@ def handleEvent(session: Session, json: String): Unit =
       s"""
         MATCH(p:post {id:${args("post")}})
         MATCH(u:user {id:${args("user")}})
-        MERGE (p) -[:Has] -> (c:comment {id:${args("id")},text:${args("text")},date:${args("date")}}) <- [:Commented] -(u)
+        MERGE (p) -[:Has] -> (c:post {id:${args("id")},text:${args("text")},date:${args("date")}}) <- [:Posted] -(u)
          """)
     case "like" => session.run(
       s"""
@@ -44,14 +42,14 @@ def handleEvent(session: Session, json: String): Unit =
       s"""
         MATCH (u:user {id: ${args("id")}})
         OPTIONAL MATCH (u)-[:Posted]->(p:post)
-        OPTIONAL MATCH (p)-[:Has]->(c:comment)
-        OPTIONAL MATCH (u)-[:Commented]->(cu:comment)
+        OPTIONAL MATCH (p)-[:Has]->(c:post)
+        OPTIONAL MATCH (u)-[:Posted]->(cu:post)
         DETACH DELETE c,cu, p, u
          """)
     case "delete-post" => session.run(
       s"""
         MATCH(p:post {id:${args("id")}})
-        OPTIONAL MATCH (p) -[:Has]->(c:comment)
+        OPTIONAL MATCH (p) -[:Has]->(c:post)
         DETACH DELETE c,p
          """)
     case "update-post" => session.run(
@@ -60,7 +58,7 @@ def handleEvent(session: Session, json: String): Unit =
         SET p.text = ${args("text")}
          """)
     case _ => println(s"Unknown event: $event")
-/*
+
 @main def Main =
   val driver = GraphDatabase.driver("neo4j://localhost:7687", AuthTokens.basic("neo4j", "beydb-beepr"))
   System.out.println("Connection established.")
@@ -75,23 +73,21 @@ def handleEvent(session: Session, json: String): Unit =
     } catch {
       case e: Exception => println("Error: " + e.getMessage)
     }
-
-
   session.close()
   driver.close()
-*/
 
-@main def Main =
-  val s = Simulator(seed = 1337)
-  for i <- 0 until 1000 do
-    if (i & 0b11) != 0b11 then
-      val e = s.randomEvent()
-      println(e)
-    else
-      val c = s.challenge(handler)
-  println(s.score())
 
-  val driver = GraphDatabase.driver(
-    "neo4j://localhost:7687", AuthTokens.basic("neo4j", "beydb-beepr"))
-  driver.verifyConnectivity()
-  driver.close()
+//@main def Main =
+//  val s = Simulator(seed = 1337)
+//  for i <- 0 until 1000 do
+//    if (i & 0b11) != 0b11 then
+//      val e = s.randomEvent()
+//      println(e)
+//    else
+//      val c = s.challenge(handler)
+//  println(s.score())
+//
+//  val driver = GraphDatabase.driver(
+//    "neo4j://localhost:7687", AuthTokens.basic("neo4j", "beydb-beepr"))
+//  driver.verifyConnectivity()
+//  driver.close()
