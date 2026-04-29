@@ -112,8 +112,8 @@
     </orderEntry>
   </component>
   <component name="SbtModule">
-    <option name="buildForURI" value="file:/$MODULE_DIR$/../../" />
-    <option name="imports" value="SUB:DOLLAR27e2080b5730f3fcb375.`root`, _root_.sbt.Keys._, _root_.sbt.ScriptedPlugin.autoImport._, _root_.sbt.plugins.JUnitXmlReportPlugin.autoImport._, _root_.sbt.plugins.MiniDependencyTreePlugin.autoImport._, _root_.sbt._, _root_.sbt.nio.Keys._, _root_.sbt.plugins.IvyPlugin, _root_.sbt.plugins.JvmPlugin, _root_.sbt.plugins.CorePlugin, _root_.sbt.ScriptedPlugin, _root_.sbt.plugins.SbtPlugin, _root_.sbt.plugins.SemanticdbPlugin, _root_.sbt.plugins.JUnitXmlReportPlugin, _root_.sbt.plugins.Giter8TemplatePlugin, _root_.sbt.plugins.MiniDependencyTreePlugin, _root_.scala.xml.{TopScope=&gt;SUB:DOLLARscope}" />
-    <option name="resolvers" value="C:\Users\sebas\.ivy2\cache|ivy|true|Local cache, https://repo1.maven.org/maven2/|maven|public" />
+    <option name="buildForURI" value="file:/$MODULE_DIR$/../../../../../205.2%20-%20Beyond%20relational%20DB/lab_beepr_git/Beepr/" />
+    <option name="imports" value="SUB:DOLLARf9b20ae343655df05ad1.`root`, _root_.sbt.Keys._, _root_.sbt.ScriptedPlugin.autoImport._, _root_.sbt.plugins.JUnitXmlReportPlugin.autoImport._, _root_.sbt.plugins.MiniDependencyTreePlugin.autoImport._, _root_.sbt._, _root_.sbt.nio.Keys._, _root_.sbt.plugins.IvyPlugin, _root_.sbt.plugins.JvmPlugin, _root_.sbt.plugins.CorePlugin, _root_.sbt.ScriptedPlugin, _root_.sbt.plugins.SbtPlugin, _root_.sbt.plugins.SemanticdbPlugin, _root_.sbt.plugins.JUnitXmlReportPlugin, _root_.sbt.plugins.Giter8TemplatePlugin, _root_.sbt.plugins.MiniDependencyTreePlugin, _root_.scala.xml.{TopScope=&gt;SUB:DOLLARscope}" />
+    <option name="resolvers" value="https://repo1.maven.org/maven2/|maven|public, C:\Users\gaeta\.ivy2\cache|ivy|true|Local cache" />
   </component>
 </module>
