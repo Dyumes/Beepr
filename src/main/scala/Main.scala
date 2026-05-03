@@ -64,7 +64,7 @@ def user_clause_handler(clause: Clause, var_name: String, namecreator: Namecreat
     case Clause.HasLastName(name) => Some(s"MATCH ($var_name:user {last:\"$name\"})")
     case Clause.HasPost(p) => post_clause_handler(p, var_name2, namecreator) match {
       case Some(q) => Some(s"""$q
-                               MATCH ($var_name:user) -[:Posted]->(p)""")
+                               MATCH ($var_name:user) -[:Posted]->($var_name2)""")
       case None => None
     }
     case _ => None
@@ -77,7 +77,7 @@ def post_clause_handler(clause: Clause, var_name: String, namecreator: Namecreat
     case Clause.True => Some(s"MATCH ($var_name:post)")
     case Clause.HasAuthor(subclause) => user_clause_handler(subclause, var_name2, namecreator) match {
       case Some(q) => Some(s"$q" +
-        s"MATCH ($var_name) -[:Posted]->(p:post)")
+        s"MATCH ($var_name2) -[:Posted]->($var_name:post)")
       case None => None
     }
 
@@ -87,7 +87,8 @@ def post_clause_handler(clause: Clause, var_name: String, namecreator: Namecreat
       case None => None
     }
     case Clause.LikeCount(likes) => condition_handler(likes) match {
-      case Some(q) => Some(s"OPTIONAL MATCH ($var_name:post) <-[l:Like]-() " +
+      case Some(q) => Some(s"MATCH ($var_name:post)" +
+                            s"OPTIONAL MATCH ($var_name) <-[l:Like]-() " +
                             s"WITH $var_name, COUNT(l) AS likeCount " +
                             s"WHERE $q")
       case None => None
@@ -140,14 +141,14 @@ def handleEvent(session: Session, json: String): Unit =
       s"""
         MATCH (u:user {id: ${args("id")}})
         OPTIONAL MATCH (u)-[:Posted]->(p:post)
-        OPTIONAL MATCH (p)-[:Has]->(c:post)
+        OPTIONAL MATCH (p)-[:Has*]->(c:post)
         OPTIONAL MATCH (u)-[:Posted]->(cu:post)
         DETACH DELETE c,cu, p, u
          """)
     case "delete-post" => session.run(
       s"""
         MATCH(p:post {id:${args("id")}})
-        OPTIONAL MATCH (p) -[:Has]->(c:post)
+        OPTIONAL MATCH (p) -[:Has*]->(c:post)
         DETACH DELETE c,p
          """)
     case "update-post" => session.run(
