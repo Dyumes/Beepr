@@ -26,9 +26,21 @@ class Namecreator {
   }
 }
 
+object Neo4jClient {
+  private lazy val sharedDriver = GraphDatabase.driver(
+    "neo4j://localhost:7687",
+    AuthTokens.basic("neo4j", "beydb-beepr")
+  )
+
+  def driver: Driver = sharedDriver
+
+  def session(): Session = sharedDriver.session()
+
+  def close(): Unit = sharedDriver.close()
+}
+
 def handler(query: sns.Query): Option[Int] = {
-  val driver = GraphDatabase.driver("neo4j://localhost:7687", AuthTokens.basic("neo4j", "beydb-beepr"))
-  val session = driver.session()
+  val session = Neo4jClient.session()
   val namecreator = new Namecreator
   val var_name = namecreator.getname()
   try {
@@ -52,7 +64,6 @@ def handler(query: sns.Query): Option[Int] = {
     }
   } finally {
     session.close()
-    driver.close()
   }
 }
 
@@ -135,7 +146,7 @@ def handleEvent(session: Session, json: String): Unit =
       s"""
         MATCH(p:post {id:${args("post")}})
         MATCH(u:user {id:${args("user")}})
-         MERGE (u) -[:Like] -> (p)
+        MERGE (u) -[:Like] -> (p)
          """)
     case "delete-user" => session.run(
       s"""
@@ -177,21 +188,23 @@ def handleEvent(session: Session, json: String): Unit =
 
 
 @main def Main =
-  val driver = GraphDatabase.driver("neo4j://localhost:7687", AuthTokens.basic("neo4j", "beydb-beepr"))
+  val driver = Neo4jClient.driver
   System.out.println("Connection established.")
   val session = driver.session()
   val s = Simulator(seed = 1337)
-  session.run("MATCH (n) DETACH DELETE n")
-  for i <- 0 until 1000 do
-    if (i & 0b11) != 0b11 then
-      val e = s.randomEvent()
-      handleEvent(session, e)
+  try {
+    session.run("MATCH (n) DETACH DELETE n")
+    for i <- 0 until 1000 do
+      if (i & 0b11) != 0b11 then
+        val e = s.randomEvent()
+        handleEvent(session, e)
 
-    else
-      val c = s.challenge(handler)
-  println(s.score())
+      else
+        val c = s.challenge(handler)
+    println(s.score())
 
-
-  session.close()
-  driver.verifyConnectivity()
-  driver.close()
+    driver.verifyConnectivity()
+  } finally {
+    session.close()
+    Neo4jClient.close()
+  }
